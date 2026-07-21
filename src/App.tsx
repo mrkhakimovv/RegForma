@@ -3,13 +3,37 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { RegistrationForm } from './components/RegistrationForm';
 import { AdminDashboard } from './components/AdminDashboard';
+import { useEffect } from 'react';
+
+function ShortcutHandler() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.altKey && e.key === '7') {
+        if (location.pathname === '/admin') {
+          navigate('/');
+        } else {
+          navigate('/admin');
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [navigate, location.pathname]);
+
+  return null;
+}
 
 export default function App() {
   return (
     <Router>
+      <ShortcutHandler />
       <main className="min-h-screen w-full bg-[#0a0a0f] flex items-center justify-center p-4 sm:p-8 relative overflow-hidden font-sans">
         {/* Atmospheric Background Elements */}
         <div className="absolute top-[-10%] left-[-5%] w-[600px] h-[600px] bg-[#FEC204] opacity-10 blur-[120px] rounded-full z-0 pointer-events-none" />
