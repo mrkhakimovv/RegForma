@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { initializeFirestore } from 'firebase/firestore';
 import config from '../../firebase-applet-config.json';
 
 const app = initializeApp({
@@ -12,4 +12,6 @@ const app = initializeApp({
   measurementId: config.measurementId,
 });
 
-export const db = getFirestore(app, config.firestoreDatabaseId);
+export const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true,
+}, config.firestoreDatabaseId);
