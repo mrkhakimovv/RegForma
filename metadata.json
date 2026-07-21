@@ -1,0 +1,6 @@
+{
+  "name": "Registration Form",
+  "description": "A premium glassmorphism registration form for students.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
