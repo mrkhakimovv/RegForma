@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { motion, AnimatePresence } from 'motion/react';
 import { Loader2, CheckCircle, AlertCircle, ChevronDown } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { db } from '../lib/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, setDoc, increment } from 'firebase/firestore';
 
 type FormData = {
   fullName: string;
@@ -17,6 +17,14 @@ const GRADE_OPTIONS = ['9-sinf', '10-sinf', '11-sinf'];
 export function RegistrationForm() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorToast, setErrorToast] = useState(false);
+
+  useEffect(() => {
+    if (!localStorage.getItem('device_visited')) {
+      const statsRef = doc(db, 'statistics', 'visits');
+      setDoc(statsRef, { count: increment(1) }, { merge: true }).catch(console.error);
+      localStorage.setItem('device_visited', 'true');
+    }
+  }, []);
 
   const {
     register,
@@ -34,9 +42,33 @@ export function RegistrationForm() {
 
   const onSubmit = async (data: FormData) => {
     setErrorToast(false);
+    
+    // Get device info
+    const ua = navigator.userAgent;
+    let device = "Kompyuter";
+    if (/android/i.test(ua)) {
+      device = "Android";
+    } else if (/iPad|iPhone|iPod/.test(ua)) {
+      device = "iOS";
+    }
+
+    // Get location
+    let location = "Noma'lum";
+    try {
+      const res = await fetch('https://ipapi.co/json/');
+      if (res.ok) {
+        const ipData = await res.json();
+        location = `${ipData.city || ''}, ${ipData.country_name || ''}`.trim().replace(/^,|,$/g, '');
+      }
+    } catch (e) {
+      console.log('Location fetch failed', e);
+    }
+
     try {
       await addDoc(collection(db, 'registrations'), {
         ...data,
+        device,
+        location: location || "Noma'lum",
         createdAt: serverTimestamp(),
       });
       

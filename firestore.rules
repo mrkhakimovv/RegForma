@@ -8,5 +8,8 @@ service cloud.firestore {
       // Admins will likely use a different environment or service account to read data
       allow update, delete: if false;
     }
+    match /statistics/{statsId} {
+      allow read, write: if true;
+    }
   }
 }

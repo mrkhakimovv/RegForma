@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, doc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { Users, Phone, GraduationCap, Calendar, Search } from 'lucide-react';
+import { Users, Phone, GraduationCap, Calendar, Search, Eye, Smartphone, MapPin } from 'lucide-react';
 import { motion } from 'motion/react';
 
 type Registration = {
@@ -16,6 +16,7 @@ export function AdminDashboard() {
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [visitorCount, setVisitorCount] = useState<number>(0);
 
   useEffect(() => {
     const q = query(
@@ -32,7 +33,17 @@ export function AdminDashboard() {
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    const statsRef = doc(db, 'statistics', 'visits');
+    const unsubscribeStats = onSnapshot(statsRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setVisitorCount(docSnap.data().count || 0);
+      }
+    });
+
+    return () => {
+      unsubscribe();
+      unsubscribeStats();
+    };
   }, []);
 
   const filteredRegistrations = registrations.filter((reg) =>
@@ -56,13 +67,20 @@ export function AdminDashboard() {
     <div className="w-full max-w-6xl mx-auto">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight mb-2">Admin Panel</h1>
-          <p className="text-white/50 text-sm">
-            Jami ro'yxatdan o'tganlar: <span className="text-[#FEC204] font-semibold">{registrations.length}</span> ta
-          </p>
+          <h1 className="text-3xl font-bold text-white tracking-tight mb-4">Admin Panel</h1>
+          <div className="flex flex-wrap gap-6 text-sm">
+            <div className="flex items-center gap-2 text-white/50 bg-white/5 border border-white/10 px-4 py-2 rounded-xl">
+              <Users className="w-4 h-4 text-[#FEC204]" />
+              Jami ro'yxatdan o'tganlar: <span className="text-[#FEC204] font-bold text-base ml-1">{registrations.length}</span>
+            </div>
+            <div className="flex items-center gap-2 text-white/50 bg-white/5 border border-white/10 px-4 py-2 rounded-xl">
+              <Eye className="w-4 h-4 text-[#FEC204]" />
+              Saytga kirgan qurilmalar soni: <span className="text-[#FEC204] font-bold text-base ml-1">{visitorCount}</span>
+            </div>
+          </div>
         </div>
         
-        <div className="relative w-full md:w-auto">
+        <div className="relative w-full md:w-auto mt-4 md:mt-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
           <input
             type="text"
@@ -89,6 +107,12 @@ export function AdminDashboard() {
                   <div className="flex items-center gap-2"><GraduationCap className="w-4 h-4" /> Sinf</div>
                 </th>
                 <th className="py-4 px-6 font-semibold">
+                  <div className="flex items-center gap-2"><Smartphone className="w-4 h-4" /> Qurilma</div>
+                </th>
+                <th className="py-4 px-6 font-semibold">
+                  <div className="flex items-center gap-2"><MapPin className="w-4 h-4" /> Manzil</div>
+                </th>
+                <th className="py-4 px-6 font-semibold">
                   <div className="flex items-center gap-2"><Calendar className="w-4 h-4" /> Sana</div>
                 </th>
               </tr>
@@ -96,13 +120,13 @@ export function AdminDashboard() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={4} className="py-12 text-center text-white/50">
+                  <td colSpan={6} className="py-12 text-center text-white/50">
                     Yuklanmoqda...
                   </td>
                 </tr>
               ) : filteredRegistrations.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="py-12 text-center text-white/50">
+                  <td colSpan={6} className="py-12 text-center text-white/50">
                     Ma'lumot topilmadi
                   </td>
                 </tr>
@@ -116,12 +140,18 @@ export function AdminDashboard() {
                     className="border-b border-white/5 hover:bg-white/5 transition-colors text-white text-sm"
                   >
                     <td className="py-4 px-6 font-medium">{reg.fullName}</td>
-                    <td className="py-4 px-6 font-mono text-white/80">{reg.phoneNumber}</td>
+                    <td className="py-4 px-6 font-mono text-white/80">
+                      <a href={`tel:${reg.phoneNumber.replace(/\s/g, '')}`} className="hover:text-blue-400 hover:underline transition-colors">
+                        {reg.phoneNumber}
+                      </a>
+                    </td>
                     <td className="py-4 px-6">
                       <span className="inline-block px-3 py-1 bg-[#FEC204]/10 text-[#FEC204] rounded-full text-xs font-semibold">
                         {reg.grade}
                       </span>
                     </td>
+                    <td className="py-4 px-6 text-white/80">{reg.device || "Noma'lum"}</td>
+                    <td className="py-4 px-6 text-white/80">{reg.location || "Noma'lum"}</td>
                     <td className="py-4 px-6 text-white/60">{formatDate(reg.createdAt)}</td>
                   </motion.tr>
                 ))
